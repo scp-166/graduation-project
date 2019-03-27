@@ -12,16 +12,13 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = '55rts@=q^&w-0!#j)wlboc=+dvmp9v+5z5=9xm1e@hc9dh-o#c'
 
-
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ["*"]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -60,12 +57,15 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            'builtins': [
+                'django.templatetags.static',
+                # 模版中不用在开始{# load static #} 来加载静态文件
+            ]
         },
     },
 ]
 
 WSGI_APPLICATION = 'project.wsgi.application'
-
 
 DATABASES = {
     'default': {
@@ -73,7 +73,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -90,7 +89,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 LANGUAGE_CODE = 'zh-Hans'
 
 TIME_ZONE = 'Asia/Shanghai'
@@ -102,3 +100,7 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')  # 部署后换成static_collected
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static')
+# ]

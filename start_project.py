@@ -16,8 +16,8 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument("--port", "-p",
                     type=int,
-                    default=8080,
-                    help="服务器端口，默认为8080")
+                    default=8000,
+                    help="服务器端口，默认为8888")
 
 parser.add_argument("--host", "-H",  # 避免和--help的简写冲突
                     default="0.0.0.0",
@@ -25,7 +25,7 @@ parser.add_argument("--host", "-H",  # 避免和--help的简写冲突
 
 args = parser.parse_args()  # 监听ing
 
-print("Fortress {} is running on {}:{}".format(version, args.host, args.port))
+print("project {} is running on {}:{}".format(version, args.host, args.port))
 
 wsgi_server = WSGIServer(  # 设置wsgi服务器
     (args.host, args.port),
