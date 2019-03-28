@@ -47,18 +47,17 @@ import json
 
 ws = create_connection("ws://127.0.0.1:8000/echo/", timeout=5)
 
+data = '{"type":%d, "id":%d, "data":%0.2f, "status":%d}'
 
 def do1():
     i = 0
     while 1:
         if ws.connected:
-            ws.send('{"data": "111"}', opcode=websocket.ABNF.OPCODE_TEXT)
-            ws.send('{"data": "122"}', opcode=websocket.ABNF.OPCODE_TEXT)
-            ws.send('{"data": "133"}', opcode=websocket.ABNF.OPCODE_TEXT)
+            ws.send(data % (1, 1, 66.666, 1), opcode=websocket.ABNF.OPCODE_TEXT)
             sleep(1)
             print(ws.recv())
         i += 1
-        if i == 500:
+        if i == 2:
             ws.send('{"data": "close"}',
                     opcode=websocket.ABNF.OPCODE_TEXT)
             ws.close()
@@ -69,13 +68,11 @@ def do2():
     i = 0
     while 1:
         if ws.connected:
-            ws.send('{"data": "211"}', opcode=websocket.ABNF.OPCODE_TEXT)
-            ws.send('{"data": "222"}', opcode=websocket.ABNF.OPCODE_TEXT)
-            ws.send('{"data": "233"}', opcode=websocket.ABNF.OPCODE_TEXT)
+            ws.send(data % (1, 2, 68.666, 1), opcode=websocket.ABNF.OPCODE_TEXT)
             sleep(1)
             print(ws.recv())
         i += 1
-        if i == 500:
+        if i == 2:
             ws.send('{"data": "close"}',
                     opcode=websocket.ABNF.OPCODE_TEXT)
             ws.close()
@@ -87,13 +84,11 @@ def do3():
     i = 0
     while 1:
         if ws.connected:
-            ws.send('{"data": "311"}', opcode=websocket.ABNF.OPCODE_TEXT)
-            ws.send('{"data": "322"}', opcode=websocket.ABNF.OPCODE_TEXT)
-            ws.send('{"data": "333"}', opcode=websocket.ABNF.OPCODE_TEXT)
+            ws.send(data % (1, 3, 69.666, 1), opcode=websocket.ABNF.OPCODE_TEXT)
             sleep(1)
             print(ws.recv())
         i += 1
-        if i == 500:
+        if i == 3:
             ws.send('{"data": "close"}',
                     opcode=websocket.ABNF.OPCODE_TEXT)
             ws.close()
@@ -102,17 +97,21 @@ def do3():
 
 
 if __name__ == '__main__':
+    try:
+        t1 = threading.Thread(target=do1)
+        t2 = threading.Thread(target=do2)
+        t3 = threading.Thread(target=do3)
 
-    t1 = threading.Thread(target=do1)
-    t2 = threading.Thread(target=do2)
-    t3 = threading.Thread(target=do3)
+        print(threading.enumerate())
 
-    print(threading.enumerate())
+        t1.start()
+        t2.start()
+        t3.start()
 
-    t1.start()
-    t2.start()
-    t3.start()
+        t1.join()
+        t2.join()
+        t3.join()
+    except KeyboardInterrupt as e:
+        print("out")
+        exit()
 
-    t1.join()
-    t2.join()
-    t3.join()

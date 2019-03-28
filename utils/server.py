@@ -1,11 +1,17 @@
+from gevent import monkey
+monkey.patch_all()
 import gevent
-from gevent.socket import wait_read, wait_write
 import json
 
 
 class WsgBridge:
     """
     前后端websocket通信
+    需要区分功能
+        树莓派 发送 数据给后端
+        后端 定时发指令 给 树莓派
+        前端 控制 指令
+
     """
 
     def __init__(self, websocket):
@@ -45,6 +51,8 @@ class WsgBridge:
                 if 'data' in data:
                     # 字典中存在键data，则进行操作
                     print("假装保存了数据", data["data"])
+                for i in data.keys():
+                    print(i, data[i], type(data[i]))
         finally:
             self.close()
 
@@ -57,7 +65,7 @@ class WsgBridge:
         try:
             while True:
                 # 到时候这里改为指令
-                data = json.dumps({'data': "aaa", 'command': '1', 'other': 'none'})  # dict->str
+                data = json.dumps({'type': 2, 'id':1, 'command': 1, 'other': ''})  # dict->str
                 if not len(data):
                     return
                 self._websocket.send(data)
