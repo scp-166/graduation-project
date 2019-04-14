@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from dwebsocket import require_websocket, accept_websocket
 import threading
 import json
-from utils.server import WsgBridge
+from utils.server import WsgBridge, AliveBridge
 
 
 def index(request):
@@ -27,6 +27,7 @@ def echo(request):
             print(e)
 
         wsg_bright.start()
+    return HttpResponse("无结果")
         # while True:
             # request.environ.get('wsgi.websocket').send(json.dumps({'data': "aaa"}))
             # data = request.environ.get('wsgi.websocket').receive()
@@ -40,5 +41,21 @@ def echo(request):
             # if data.get("data", None) == "close":
             #     request.environ.get('wsgi.websocket').close()
             #     break
+
+
+def is_active(request):
+    if not request.environ.get('wsgi.websocket'):
+        return HttpResponse("非websocket请求")
+    else:
+        webscocket = request.environ.get('wsgi.websocket')
+        wsg_bright = AliveBridge(webscocket)
+        try:
+            wsg_bright.open()
+        except Exception as e:
+            print(e)
+
+        wsg_bright.start()
+    return HttpResponse("websocket端")
+
 
 

@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--port", "-p",
                     type=int,
                     default=8000,
-                    help="服务器端口，默认为8888")
+                    help="服务器端口，默认为8000")
 
 parser.add_argument("--host", "-H",  # 避免和--help的简写冲突
                     default="0.0.0.0",
