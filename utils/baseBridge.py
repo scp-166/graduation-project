@@ -32,7 +32,7 @@ class BaseBridge:
         """
 
     @abc.abstractmethod
-    def _forward_outbound(self, flag=0):
+    def _forward_outbound(self, flag):
         """
         后端->前端
         :param channel:

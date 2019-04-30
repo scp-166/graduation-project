@@ -25,7 +25,7 @@ parser.add_argument("--host", "-H",  # 避免和--help的简写冲突
 
 args = parser.parse_args()  # 监听ing
 
-print("project {} is running on {}:{}".format(version, args.host, args.port))
+print("the project {} is running on {}:{}".format(version, args.host, args.port))
 
 wsgi_server = WSGIServer(  # 设置wsgi服务器
     (args.host, args.port),

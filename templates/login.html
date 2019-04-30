@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登陆</title>
+</head>
+<body>
+<form action="" method="post">
+    <input type='hidden' name='csrfmiddlewaretoken' value='{{ csrf_token }}'>
+{#    {% csrf_token %}#}
+    <input type="text" name="telephone" placeholder="手机号">
+    <input type="password" name="password" placeholder="密码">
+    <button type="submit">登陆</button>
+</form>
+</body>
+</html>

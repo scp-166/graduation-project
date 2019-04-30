@@ -43,58 +43,63 @@ from websocket import create_connection
 import websocket
 import threading
 import json
+import requests
+import re
 
 
-data = '{"type":%d, "id":%d, "data":%0.2f, "status":%d}'
+def login(url, **kwargs):
+    telephone = kwargs.get('telephone', None)
+    password = kwargs.get('password', None)
+    if telephone is None or password is None:
+        return 0
+    else:
+        print(telephone)
+        print(password)
+        # 请求头
+        appropriate_headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'zh-CN,zh;q=0.9'
+        }
+
+        # 获取token
+        # 使用requests.Session()保持窗口唯一
+        sss = requests.Session()
+        ret = sss.get(url, headers=appropriate_headers)
+        print(ret.content.decode())
+        reg = r'<input type="hidden" name="csrfmiddlewaretoken" value="(.*)">'  # 拿到token
+        pattern = re.compile(reg)
+        result = pattern.findall(ret.content.decode())
+        print(result)
+        token = result[0]
+
+        # post data
+        target_data = {
+            'csrfmiddlewaretoken': token,
+            'telephone': telephone,
+            'password': password
+        }
+
+        # 登录后
+        ret = sss.post(url, headers=appropriate_headers, data=target_data)
+        print(ret.text)
+        if 'code' in ret.text:
+            a = json.loads(ret.text)['code']
+            print(a)
+
+        # 保存cookies
+        cookies = requests.utils.dict_from_cookiejar(sss.cookies)
+        with open("cookies.txt", "w+") as fp:
+            json.dump(cookies, fp)
+        print(cookies)
+        return sss
 
 
-def do1(ws):
-    i = 0
-    try:
-        while True:
-            if ws.connected:
-                ws.send(data % (1, 1, 66.666, 1),
-                         opcode=websocket.ABNF.OPCODE_TEXT)
-                sleep(1)
-                print("do1: ", ws.recv())
-            i += 1
-            if i == 20:
-                ws.send('{"data": "close"}',
-                         opcode=websocket.ABNF.OPCODE_TEXT)
-                ws.close()
-                sleep(1)  # 延时一下
-                break
-    except ConnectionAbortedError:
-        print("do1 ConnectionAbortedError")
-    except websocket._exceptions.WebSocketConnectionClosedException as e:
-        print("do1 WebSocketConnectionClosedException")
-
-
-def ask_alive(ws):
-    try:
-        while True:
-            if ws.connected:
-                ws.send('{"status": "1"}',  # 定时发送树莓派状态
-                         opcode=websocket.ABNF.OPCODE_TEXT)
-                print(ws.recv(), "存在回应")
-                sleep(10)  # 延时一下,10s左右表示存在
-
-    except ConnectionAbortedError:
-        print("ask_alive ConnectionAbortedError")
-    except websocket._exceptions.WebSocketConnectionClosedException:
-        print("ask_alive WebSocketConnectionClosedException")
-
+import multiprocessing
 
 if __name__ == '__main__':
-    # ws1 = create_connection("ws://127.0.0.1:8000/echo/", timeout=5)
-    # t1 = threading.Thread(target=do1, args=(ws1,))
-    # t1.start()
 
-    ws2 = create_connection("ws://127.0.0.1:8000/is_active/", timeout=60)
-    t2 = threading.Thread(target=ask_alive, args=(ws2,))
-    t2.start()
-
-    # t1.join()
-    t2.join()
-
+    session = login('http://127.0.0.1:8000/auth/login/', telephone='17875512067', password='abc666666')
+    session.close()
 

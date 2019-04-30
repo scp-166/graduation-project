@@ -50,15 +50,16 @@
     </div>
 </div>
 <script src="{% static 'jquery-3.1.1.min.js' %}"></script>
+<script src="{% static 'csrf_ajax.js' %}"></script>
 <script src="{% static 'bootstrap3/js/bootstrap.min.js' %}"></script>
 <script>
     $(function () {
         $(".led-status").click(function () {
             var div = $(this);
-            $.get({
-                'url': '/control/change_led/' + div.attr('data-id'),
+            csrf_ajax.get({
+                'url': '/info/change_led/' + div.attr('data-id') + '/' +div.attr('data-status'),
                 'data':{
-                    'status': div.attr('data-status')
+                    {#'status': div.attr('data-status')#}
                 },
                 'dataType': 'json',
                 'success': function (ret) {
@@ -89,7 +90,7 @@
         setInterval(function () {
             console.log("定时器");
             $.ajax({
-                    'url': '/control/is_alive/',
+                    'url': '/info/is_alive/',
                     'dataType': 'json',
                     'success': function (ret) {
                         var status = ret['status'];

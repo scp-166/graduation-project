@@ -1,20 +1,20 @@
-from gevent import monkey
-monkey.patch_all()
-from . import baseBridge
+# from gevent import monkey
+# monkey.patch_all()
+# 执行需要的manage.py需要注释上面
 from django.core.cache import cache
 import time
 import gevent
 import json
 
+from apps.exhibition.models import TerminalCategory, TerminalData, TerminalInfo
+from utils.custom_command import get_command
+from utils.cache_process import cookie_cache_processor
+from . import baseBridge
+
 
 class WsgBridge(baseBridge.BaseBridge):
     """
     前后端websocket通信
-    需要区分功能
-        树莓派 发送 数据给后端
-        后端 定时发指令 给 树莓派
-        前端 控制 指令
-
     """
 
     def __init__(self, websocket):
@@ -26,57 +26,81 @@ class WsgBridge(baseBridge.BaseBridge):
         :return:
         """
         try:
-            print("假装open初始化")
+            print("WsgBridge初始化")  # 后期改为logger
+
         except Exception as e:
             # 前端websocket期望收到一个json数据，键值对是'error': errors_message
             self._websocket.send(json.dumps({'error': e}))
             raise
 
-    def _forward_inbound(self):
+    def _forward_inbound(self, flag=0):
         """
         前端->后端
-        :param channel:
         :return:
         """
         try:
             while True:
-                data = self._websocket.receive()  # str
+                data = self._websocket.receive()  # json-like str
                 if not data:  # 没有数据时退出函数
-                    return
-                data = json.loads(data)  # str->dict
+                    print("no data")
+                data = json.loads(data)  # 其中字段类型都为正确格式
+                if 'verf' in data and data['verf'] == cookie_cache_processor.get_verification() and 'data' in data:  # 需要验证通过且有数据
+                    # 进行数据存储操作
+                    if TerminalCategory.objects.filter(category_id=data['type']).exists():
+                        category = TerminalCategory.objects.get(category_id=data['type'])
+                        if TerminalInfo.objects.filter(terminal_category=category, terminal_id=data['id']).exists():
+                            TerminalInfo.objects.filter(terminal_category=category, terminal_id=data['id']).update(status=True if data['status'] == 1 else False)
+                            terminal = TerminalInfo.objects.get(terminal_category=category, terminal_id=data['id'])
+                            # terminal.status = data['status']
+                            # terminal.save()
+                            TerminalData.objects.create(terminal=terminal, data=data['data'])
+                            print("终端信息存储完毕")
+                            self._forward_outbound(data=1)  # 发个成功响应
+                else:
+                    self._forward_outbound()  # 发个失败响应
 
-                if 'data' in data:
-                    # 字典中存在键data，则进行操作
-                    print("假装保存了数据", data["data"])
-                for i in data.keys():
-                    print(i, data[i], type(data[i]))
         finally:
             self.close()
 
-    def _forward_outbound(self, flag=0):
+    def _forward_outbound(self, flag=0, data_format=0, data=0):
         """
-        后端->前端
-        :param channel:
+        发送给网关
+        :param flag: 指令类别 0是响应 1是指令
+        :param data_format: 如果是响应，则是响应格式分类
+        :param *data: 如果是响应，对响应格式的填充
         :return:
         """
         try:
-            while True:
-                # 到时候这里改为指令
-                data = json.dumps({'type': 2, 'id':1, 'command': 1, 'other': ''})  # dict->str
-                if not len(data):
-                    return
-                self._websocket.send(data)
-                time.sleep(1)
+            if flag:
+                command = get_command()  # 从队列中获得指令
+                print("WsgBridge将要发送的指令是: {}".format(command))
+                self._websocket.send(command)  # 发送格式需要str
+            else:
+                if data_format == 0:
+                    my_format = '{"cmd_catg": %d, "data_received":%d, "verf":"%s"}'
+                    print("data响应!!!!!")
+                    received = my_format % (flag, data, cookie_cache_processor.get_verification())
+                    self._websocket.send(received)
         finally:
-            self.close()
+            # 到时候弄个logger
+            print("WsgBridge结束发送指令")
 
     def _bridge(self):
         self._tasks = [
             gevent.spawn(self._forward_inbound, ),
-            gevent.spawn(self._forward_outbound, ),
-            # gevent.spawn(self.must_close, ),
+            gevent.spawn(self.send_command_forever,),
         ]
         gevent.joinall(self._tasks)
+
+    def send_command_forever(self):
+        """
+        一直循环取出队列中的指令
+        :return:
+        """
+        while True:
+            # 堵塞ing
+            ret = get_command()  # dict-like str
+            self._websocket.send(ret)
 
     def close(self):
         """
@@ -84,16 +108,8 @@ class WsgBridge(baseBridge.BaseBridge):
         :return:
         """
         gevent.killall(self._tasks, block=True)  # 关闭协程，设置堵塞
-        self._websocket.close() # 关闭websocket
+        self._websocket.close()  # 关闭websocket
         self._tasks = []
-
-    def must_close(self):
-        """
-        强制终止，中断会被迫ConnectAbortError
-        :return:
-        """
-        time.sleep(2)
-        self.close()
 
     def start(self):
         """
@@ -122,7 +138,7 @@ class AliveBridge(baseBridge.BaseBridge):
         :return:
         """
         try:
-            print("树莓派开始发送")
+            print("状态接收初始化")
         except Exception as e:
             # 前端websocket期望收到一个json数据，键值对是'error': errors_message
             self._websocket.send(json.dumps({'error': e}))
@@ -131,55 +147,50 @@ class AliveBridge(baseBridge.BaseBridge):
     def _forward_inbound(self):
         """
         前端->后端
-        :param channel:
         :return:
         """
         try:
             while True:
                 data = self._websocket.receive()  # str
-                # if not data:  # 没有数据时退出函数
-                #     return
-                data = json.loads(data)  # str->dict
-                print("树莓派表示状态为: ", data)
-
-                if 'status' in data:
-                    # 字典中存在键status，则保存进缓存10s
-                    cache.set("status", 1, 10)
-                    print("status 1")
-                    self._forward_outbound(1)  # 进行一次响应
+                print("alivebriget: ",data)
+                if data:
+                    data = json.loads(data)  # str->dict
                 else:
-                    print("status 0")
+                    print("alive接收无")
+                    self._forward_outbound(verification='cookies')  # 进行一次响应
+                    return
+
+                if 'alive' in data and 'name' in data:
+                    # 字典中存在键alive和name，则保存进缓存10s
+                    cache.set(data["name"], 1, 10)
+                    print("存储终端名称进缓存：", data['name'])
+                    self._forward_outbound(verification='cookies')  # 进行一次响应
+                else:
+                    print("无用数据", end=' ')
                     self._forward_outbound(0)
+        except Exception as e:
+            print("Alive有问题 :", str(e))
         finally:
             print("socket is dead")
             self.close()
 
-    def _forward_outbound(self, flag=0):
+    def _forward_outbound(self, command_category=0, category=0, id=0, command=0, verification=''):
         """
         后端->前端
-        :param channel:
+        :param flag:
         :return:
         """
         try:
-            if flag:
-                if cache.get("status"):
-                    print("树莓派存在")
-                    data = json.dumps({'received': 1})  # dict->str
-            # 到时候这里改为指令
-                else:
-                    print("树莓派不存在")
-                    data = json.dumps({'received': 0})  # dict->str
-                if not len(data):
-                    return
-                else:
-                    self._websocket.send(data)
-            else:
-                data = json.dumps({'received': 0})  # dict->str
-                print("树莓派不存在2")
-                self._websocket.send(data)
+            names = cache.iter_keys("*")  # 暴力拿全部keys，后面可以根据model的名称获得
+            print("AliveBridge查询所有终端键", end=' ')
+            for i in names:
+                print(i, end=' ')
+            print()
+            data = json.dumps({'received': 0})  # dict->str
+            self._websocket.send(data)
         finally:
-            print("休眠9s")
-            time.sleep(9)
+            # 届时写个logger
+            print("AliveBridge回应状态结束")
 
     def _bridge(self):
         self._tasks = [
@@ -195,7 +206,7 @@ class AliveBridge(baseBridge.BaseBridge):
         :return:
         """
         gevent.killall(self._tasks, block=True)  # 关闭协程，设置堵塞
-        self._websocket.close() # 关闭websocket
+        self._websocket.close()  # 关闭websocket
         self._tasks = []
 
     def must_close(self):
@@ -207,6 +218,6 @@ class AliveBridge(baseBridge.BaseBridge):
         启动一个shell通信界面
         :return:
         """
-        self._bridge()  # 将激活的终端的通道设置无延时不堵塞，gevent添加任务
+        self._bridge()  # 将激活的终端的通道设置无延时不堵塞，gevent中添加任务
 
 

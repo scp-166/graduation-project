@@ -1,8 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-from dwebsocket import require_websocket, accept_websocket
-import threading
-import json
+from django.http import HttpResponse, JsonResponse
 from utils.server import WsgBridge, AliveBridge
 
 
@@ -28,34 +25,9 @@ def echo(request):
 
         wsg_bright.start()
     return HttpResponse("无结果")
-        # while True:
-            # request.environ.get('wsgi.websocket').send(json.dumps({'data': "aaa"}))
-            # data = request.environ.get('wsgi.websocket').receive()
-            # if not data:  # 没有数据时退出函数
-            #     return
-            # print(type(data))   # str
-            # print(data)  # 字典格式的字符串{"data":"close"}
-            # data = json.loads(data) # str->dict
-            # print(type(data))   # dict
-            # print(data)  # {"data":"close"}
-            # if data.get("data", None) == "close":
-            #     request.environ.get('wsgi.websocket').close()
-            #     break
 
 
-def is_active(request):
-    if not request.environ.get('wsgi.websocket'):
-        return HttpResponse("非websocket请求")
-    else:
-        webscocket = request.environ.get('wsgi.websocket')
-        wsg_bright = AliveBridge(webscocket)
-        try:
-            wsg_bright.open()
-        except Exception as e:
-            print(e)
 
-        wsg_bright.start()
-    return HttpResponse("websocket端")
 
 
 
