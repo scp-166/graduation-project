@@ -14,7 +14,7 @@ class AuthProcessor:
         """
         授权相关的processor
         """
-        self._login_url = 'http://127.0.0.1:8000/auth/login/'
+        self._login_url = 'http://127.0.0.1:8000/auth/token_login/'
         self._token_url = 'http://127.0.0.1:8000/auth/token/'
         self._telephone = None
         self._password = None

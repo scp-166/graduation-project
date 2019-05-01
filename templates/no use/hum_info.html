@@ -1,0 +1,25 @@
+{% extends 'show_base.html' %}
+{% block sensor_name %}
+    湿度传感器
+{% endblock %}
+
+{% block head_content %}{% endblock %}
+
+{% block div_content %}
+    {{ sensor_data }}
+    <button class="btn btn-default month">按月分布</button>
+    <button class="btn btn-primary week">最近一周</button>
+{% endblock %}
+
+{% block script_content %}
+    <script>
+    $(function () {
+        $(".month").click(function () {
+            window.open('/show/hum/month/' + category_id + '/' + terminal_id + '', '_blank');
+        });
+        $(".week").click(function () {
+            console.log("按week")
+        })
+    })
+    </script>
+{% endblock %}

@@ -7,6 +7,25 @@ from django.core.management import utils
 from utils.cache_process import cookie_cache_processor
 
 
+class TokenLogin(View):
+    def get(self, request):
+        return render(request, 'token_login.html')
+
+    def post(self, request):
+        telephone = request.POST.get('telephone')
+        password = request.POST.get('password')
+        print(telephone)
+        print(password)
+        user = authenticate(request, username=telephone, password=password)
+        if user:
+            if user.is_active:
+                login(request, user)
+                return JsonResponse({'code': 200})
+            else:
+                return JsonResponse({"code": 400})
+        return JsonResponse({'code': 405})
+
+
 class Login(View):
     def get(self, request):
         return render(request, 'login.html')
@@ -14,8 +33,6 @@ class Login(View):
     def post(self, request):
         telephone = request.POST.get('telephone')
         password = request.POST.get('password')
-        print(telephone)
-        print(password)
         user = authenticate(request, username=telephone, password=password)
         if user:
             if user.is_active:

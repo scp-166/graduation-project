@@ -1,7 +1,6 @@
 import re
 from os import pardir
 import binascii
-import threading
 from multiprocessing import Process
 
 from utils import custom_exception
@@ -24,7 +23,7 @@ class DataProcess(Process):
 
     def run(self):
         logging_processor = LoggingProcessor('ProcessData', prefix=pardir)
-        # 根据配置文件打开串口
+        # 根据配置文件读取分类
         with open('./category.conf') as f:
             terminal_categories = eval(f.read())
 

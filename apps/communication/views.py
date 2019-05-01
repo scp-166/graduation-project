@@ -6,7 +6,11 @@ from django.http import HttpResponse
 
 from apps.exhibition.models import TerminalCategory, TerminalInfo, TerminalData
 
-from utils.server import AliveBridge
+import datetime
+from django.utils import timezone
+from django.db.models import Avg
+
+from utils.server import AliveBridge, AutoDataBridge
 from utils.custom_command import get_command, write_command
 from utils.cache_process import cookie_cache_processor
 
@@ -79,15 +83,20 @@ def is_active(request):
     return HttpResponse("websocket端")
 
 
-def get_temp_data(request):
+def auto_get_data(request, category_id, terminal_id):
 
-    data = [1, 2, 2, 3, 4, 5, 6]
-    day = [1, 2, 3, 4, 5, 6, 7]
-    return JsonResponse({'day': day, 'data': data})
+    if not request.environ.get('wsgi.websocket'):
+        return JsonResponse({'ret': "非websocket请求"})
+    else:
+        webscocket = request.environ.get('wsgi.websocket')
+        auto_data_bright = AutoDataBridge(webscocket, category_id, terminal_id)
+        try:
+            auto_data_bright.open()
+        except Exception as e:
+            print(e)
+
+        auto_data_bright.start()
+
+    return JsonResponse({'code': 400})
 
 
-def get_hum_data(request):
-
-    data = [1, 2, 2, 3, 4, 5, 6]
-    day = [1, 2, 3, 4, 5, 6, 7]
-    return JsonResponse({'day': day, 'data': data})

@@ -29,7 +29,7 @@ class TerminalInfo(models.Model):
 class TerminalData(models.Model):
     terminal = models.ForeignKey(TerminalInfo, on_delete=models.CASCADE, verbose_name="终端id")
     data = models.FloatField(default=0.0, verbose_name="终端数据")
-    create_time = models.DateField(auto_now_add=True, verbose_name="创建时间")
+    create_time = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
 
     def __str__(self):
         return "终端: <{}>".format(self.terminal_id)

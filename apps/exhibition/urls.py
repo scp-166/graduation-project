@@ -1,19 +1,19 @@
 from django.urls import path
 from . import views
 
-urlpatterns = [
-    path('', views.show),
+app_name = 'exhibition'
 
-    path('temp/status/', views.show_temp_status),
-    path('hum/status/', views.show_hum_status),
+urlpatterns = [
+    path('', views.show_index, name='index'),
+
+    path('sensor/<int:category_id>', views.show_sensor_status, name='sensor_status'),
 
     # 后面改为restful形式
     path('temp/<int:category_id>/<int:terminal_id>/', views.show_temp),
     path('hum/<int:category_id>/<int:terminal_id>/', views.show_hum),
 
-    path('temp/<int:category_id>/<int:terminal_id>/<int:days>/',
-         views.show_temp_by_day),
-    path('hum/<int:category_id>/<int:terminal_id>/<int:days>/',
-         views.show_hum_by_day),
+
+    path('data/cur_week', views.get_data_by_week),
+    path('data/month/', views.get_data_by_month),
 
 ]

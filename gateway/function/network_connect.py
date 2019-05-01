@@ -39,7 +39,7 @@ class NetWorkProcess(Process):
             return
 
         try:
-            ws2 = create_connection("ws://127.0.0.1:8000/is_active/")
+            ws2 = create_connection("ws://127.0.0.1:8000/info/is_active/")
         except socket.timeout:
             self.error_queue.put(custom_exception.NetWorkProcessError(custom_desc='ws2 is socket.timeout!'))
             return
@@ -69,7 +69,7 @@ class NetWorkProcess(Process):
 
             send_thread.start()  # 启动
             received_thread.start()
-            # ask_alive_thread.start()
+            ask_alive_thread.start()
             get_token_thread.start()
 
             while True:
@@ -85,9 +85,9 @@ class NetWorkProcess(Process):
                 if not received_thread.is_alive():
                     print("接收子线程结束")
                     return
-                # if not ask_alive_thread.is_alive():
-                #     print("状态发送子线程结束")
-                #     return
+                if not ask_alive_thread.is_alive():
+                    print("状态发送子线程结束")
+                    return
                 if not get_token_thread.is_alive():
                     print("获取token子线程结束")
                     return
@@ -175,8 +175,8 @@ def ask_alive(ws, q, logging_processor):
         while True:
             if ws.connected:
                 # 设置网关的状态
-                terminal_cache_processor.add_terminal('Pi')
-                terminal_cache_processor.set_terminal_status('Pi', 1)
+                terminal_cache_processor.add_terminal('PI')
+                terminal_cache_processor.set_terminal_status('PI', 1)
                 # 从缓存中读取终端信息
                 for name in terminal_cache_processor.get_all_terminal_name():  # 读取所有终端名
                     if terminal_cache_processor.get_terminal_status(name):  # 判断终端是否存在
