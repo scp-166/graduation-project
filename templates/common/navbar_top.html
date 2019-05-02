@@ -1,0 +1,34 @@
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <!-- 移动设备友好展示 -->
+        <div class="navbar-header">
+            <!-- data-target是要隐藏的导航栏 -->
+            <button type="button" class="navbar-toggle collapsed"
+                    data-toggle="collapse"
+                    data-target="#target-navbar-collapse"
+                    aria-expanded="false">
+                <span class="sr-only">切换任务</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">功能选择</a>
+        </div>
+
+        <div class="collapse navbar-collapse"
+             id="target-navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li class="active"><a
+                        href="{% url 'exhibition:index' %}">首页 <span
+                        class="sr-only">(current)</span></a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#">LED</a></li>
+                <li><a href="{% url 'exhibition:sensor_status' category_id=2 %}">温度</a></li>
+                <li><a href="{% url 'exhibition:sensor_status' category_id=3 %}">湿度</a></li>
+
+            </ul>
+        </div>
+    </div>
+</nav>

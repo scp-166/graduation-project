@@ -10,68 +10,15 @@
           href="{% static 'bootstrap3/css/bootstrap.min.css' %}">
 </head>
 <body>
-<div class="container-fluid">
+<div class="container">
     <div class="row">
-        <nav class="navbar navbar-default">
-            <div class="container-fluid">
-                <!-- 移动设备友好展示 -->
-                <div class="navbar-header">
-                    <!-- data-target是要隐藏的导航栏 -->
-                    <button type="button" class="navbar-toggle collapsed"
-                            data-toggle="collapse"
-                            data-target="#target-navbar-collapse"
-                            aria-expanded="false">
-                        <span class="sr-only">切换任务</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#">功能选择</a>
-                </div>
+        {% include 'common/navbar_top.html' %}
+        <p class="h1 text-center">欢迎来到温湿度监控系统</p>
+        <img src="{% static 'picture/index.jpg' %}" class="img-responsive" alt="Responsive image">
+        <div class="jumbotron">
+            <p>Photo by Mikhail Vasilyev on Unsplash</p>
+        </div>
 
-                <div class="collapse navbar-collapse"
-                     id="target-navbar-collapse">
-                    <ul class="nav navbar-nav">
-                        <li class="active"><a
-                                href="{% url 'exhibition:index' %}">首页 <span
-                                class="sr-only">(current)</span></a></li>
-                    </ul>
-
-                    <ul class="nav navbar-nav navbar-right">
-                        <li><a href="#">LED</a></li>
-
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle"
-                               data-toggle="dropdown" role="button"
-                               aria-haspopup="true" aria-expanded="false">温度
-                                <span class="caret"></span></a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a href="{% url 'exhibition:sensor_status' category_id=2 %}">温度传感器总览</a>
-                                </li>
-                                <li role="separator" class="divider"></li>
-                                <li><a href="#">温度总览</a></li>
-                            </ul>
-                        </li>
-
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle"
-                               data-toggle="dropdown" role="button"
-                               aria-haspopup="true" aria-expanded="false">湿度
-                                <span class="caret"></span></a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a href="{% url 'exhibition:sensor_status' category_id=3 %}">湿度传感器总览</a>
-                                </li>
-                                <li role="separator" class="divider"></li>
-                                <li><a href="#">湿度总览</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div><!-- /.navbar-collapse -->
-            </div><!-- /.container-fluid -->
-        </nav>
-        <h1>欢迎来到监控系统!!!!!!!!!!!!!</h1>
     </div>
 </div>
 <script src="{% static 'jquery-3.1.1.min.js' %}"></script>

@@ -1,18 +1,34 @@
 from django.shortcuts import render
-from django.http import JsonResponse
-from django.core.cache import cache
+from django.http import JsonResponse, HttpResponse
 from django.views import View
-from django.http import HttpResponse
 
-from apps.exhibition.models import TerminalCategory, TerminalInfo, TerminalData
 
-import datetime
-from django.utils import timezone
-from django.db.models import Avg
+from apps.exhibition.models import TerminalCategory, TerminalInfo, TerminalData, \
+    WarningValue
 
-from utils.server import AliveBridge, AutoDataBridge
+from server_ws.gateway_bridge import GatewayBridge
+from server_ws.status_alive_bridge import StatusAliveBridge
+from server_ws.auto_get_sensor_data_bridge import AutoGetSensorDataBridge
+from server_ws.ask_status_bridge import AskStatusBridge
+from server_ws.ask_pi_status_bridge import AskPiStatusBridge
+
 from utils.custom_command import get_command, write_command
 from utils.cache_process import cookie_cache_processor
+
+
+def echo(request):
+    if not request.environ.get('wsgi.websocket'):
+        return HttpResponse("非websocket请求")
+    else:
+        webscocket = request.environ.get('wsgi.websocket')
+        gateway_bright = GatewayBridge(webscocket)
+        try:
+            gateway_bright.open()
+        except Exception as e:
+            print(e)
+
+        gateway_bright.start()
+    return HttpResponse("无结果")
 
 
 def control_led(request):
@@ -41,18 +57,40 @@ def change_led_status(request, led_id):
         return JsonResponse({'is_changed': 0})
 
 
-def is_alive(request):
-    if cache.get('status'):
-        status = 1
+def ask_status(request):
+    if not request.environ.get('wsgi.websocket'):
+        return JsonResponse({'ret': "非websocket请求"})
     else:
-        status = 0
-    data = {
-        'status': status
-    }
-    return JsonResponse(data)
+        webscocket = request.environ.get('wsgi.websocket')
+        ask_status_bright = AskStatusBridge(webscocket)
+        try:
+            ask_status_bright.open()
+        except Exception as e:
+            print(e)
+
+        ask_status_bright.start()
+
+    return JsonResponse({'code': 400})
+
+
+def ask_pi_status(request):
+    if not request.environ.get('wsgi.websocket'):
+        return JsonResponse({'ret': "非websocket请求"})
+    else:
+        webscocket = request.environ.get('wsgi.websocket')
+        ask_pi_status_bright = AskPiStatusBridge(webscocket)
+        try:
+            ask_pi_status_bright.open()
+        except Exception as e:
+            print(e)
+
+        ask_pi_status_bright.start()
+
+    return JsonResponse({'code': 400})
 
 
 class TestCommand(View):
+
     def get(self, request):
         return render(request, 'command.html')
 
@@ -68,35 +106,62 @@ class TestCommand(View):
         return HttpResponse("www")
 
 
-def is_active(request):
+def set_status(request):
     if not request.environ.get('wsgi.websocket'):
         return JsonResponse({'ret': "非websocket请求"})
     else:
-        webscocket = request.environ.get('wsgi.websocket')
-        wsg_bright = AliveBridge(webscocket)
+        websocket = request.environ.get('wsgi.websocket')
+        status_alive_bright = StatusAliveBridge(websocket)
         try:
-            wsg_bright.open()
+            status_alive_bright.open()
         except Exception as e:
             print(e)
 
-        wsg_bright.start()
+        status_alive_bright.start()
     return HttpResponse("websocket端")
 
 
 def auto_get_data(request, category_id, terminal_id):
-
     if not request.environ.get('wsgi.websocket'):
         return JsonResponse({'ret': "非websocket请求"})
     else:
         webscocket = request.environ.get('wsgi.websocket')
-        auto_data_bright = AutoDataBridge(webscocket, category_id, terminal_id)
+        auto_get_sensor_data_bright = AutoGetSensorDataBridge(webscocket,
+                                                              category_id,
+                                                              terminal_id)
         try:
-            auto_data_bright.open()
+            auto_get_sensor_data_bright.open()
         except Exception as e:
             print(e)
 
-        auto_data_bright.start()
+        auto_get_sensor_data_bright.start()
 
     return JsonResponse({'code': 400})
 
+
+def change_warning_value(request):
+    """
+    根据前端获取的value，设置预警值
+    :param request:
+    :return:
+    """
+    value = request.POST.get("value")
+    category_id = request.POST.get("category_id")
+    terminal_id = request.POST.get("terminal_id")
+
+    category = TerminalCategory.objects.filter(category_id=category_id)
+    if category.exists():
+        terminal = TerminalInfo.objects.filter(terminal_category=category.first(), terminal_id=terminal_id)
+        if terminal.exists():
+            warning_detail = WarningValue.objects.get(terminal=terminal.first())
+            if warning_detail:
+                warning_detail.value = value
+                warning_detail.save()
+                # 指令2为设置预警值操作
+                write_command(2, int(category_id), int(terminal_id), int(value), cookie_cache_processor.get_verification())
+                return JsonResponse({"code": 200})
+        else:
+            return JsonResponse({"code": 405})
+    else:
+        return JsonResponse({"code": 404})
 

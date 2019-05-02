@@ -2,24 +2,25 @@
  * Created by Administrator on 2018/1/27.
  */
 
-function  wsClient() {
+function wsClient() {
 
 }
 
 // 生成url
 wsClient.prototype._generateURL = function (options) {
     // 根据http协议区分WebSocket协议
-    if (window.location.protocol === 'https:'){
+    if (window.location.protocol === 'https:') {
         var protocol = 'wss://';
-    }else{
+    } else {
         var protocol = 'ws://';
     }
     // ws://192.168.1.108:8000/fort/host/3/
-    // return  protocol + window.location.host + '/info/auto_get_hum/' + encodeURIComponent(options.desc_id) + '/';
-    let url = protocol + window.location.host + '/info/auto_get_data/' + encodeURIComponent(options.category_id) + '/' +encodeURIComponent(options.terminal_id)+'/';
-    console.log(url);
-    return  url;
-
+    // return  protocol + window.location.host + '/exchange/auto_get_hum/' + encodeURIComponent(options.desc_id) + '/';
+    if ('category_id' in options && 'terminal_id' in options) {
+        return protocol + window.location.host + options.file_path + encodeURIComponent(options.category_id) + '/' + encodeURIComponent(options.terminal_id) + '/';
+    } else {
+        return protocol + window.location.host + options.file_path;
+    }
 };
 
 // 接收数据
@@ -36,7 +37,7 @@ wsClient.prototype.connect = function (options) {
     }
     else {
         options.onError('当前浏览器不支持WebSocket！');  // 执行options参数中的onError函数
-        return ;
+        return;
     }
 
     // 以下是WebSocket正规接收数据的四步骤中的三个步骤
@@ -49,8 +50,8 @@ wsClient.prototype.connect = function (options) {
     this._ws_obj.onmessage = function (evt) {
         // 使用 JSON.parse() 方法将数据转换为 JavaScript 对象(dict-like)。
         var data = JSON.parse(evt.data.toString());  // 转为json数据
-        console.log(evt.data);  // json数据 str
-        console.log(data);  // js对象
+        // console.log(evt.data);  // data是ws自动绑定的，表示服务器的数据。此处内容为后端发来的json数据 str
+        // console.log(data);  // js对象
         if (data.error !== undefined) {  // 如果内容附带错误信息
             options.onError(data.error);  // 执行options中的onError函数 这里.error表示等于['error']
         }
@@ -68,7 +69,6 @@ wsClient.prototype.connect = function (options) {
 // 发送数据
 wsClient.prototype.send = function (data) {
     // 将一个JavaScript值(对象或者数组)转换为一个 JSON字符串
-    console.log("send" + JSON.stringify({'data':data}));
-    this._ws_obj.send(JSON.stringify({'data':data}));
+    this._ws_obj.send(JSON.stringify({'data': data}));
 
 };

@@ -24,7 +24,7 @@ class NetWorkProcess(Process):
         logging_processor = LoggingProcessor('NetWorkProcess', prefix=pardir)
         import socket
         try:
-            ws1 = create_connection("ws://127.0.0.1:8000/echo/")
+            ws1 = create_connection("ws://127.0.0.1:8000/exchange/echo/")
         except socket.timeout:
             self.error_queue.put(custom_exception.NetWorkProcessError(custom_desc='ws1 is socket.timeout!'))
             return
@@ -39,7 +39,7 @@ class NetWorkProcess(Process):
             return
 
         try:
-            ws2 = create_connection("ws://127.0.0.1:8000/info/is_active/")
+            ws2 = create_connection("ws://127.0.0.1:8000/exchange/set_status/")
         except socket.timeout:
             self.error_queue.put(custom_exception.NetWorkProcessError(custom_desc='ws2 is socket.timeout!'))
             return
@@ -56,11 +56,11 @@ class NetWorkProcess(Process):
         try:
             q = queue.Queue()
 
-            send_thread = threading.Thread(target=send_to_server, args=(ws1, self.data_process_queue, q, logging_processor))
+            send_thread = threading.Thread(target=send_to_server, args=(ws1, self.data_process_queue, self.error_queue, logging_processor))
             received_thread = threading.Thread(target=received_from_server,
-                                               args=(ws1, self.command_process_queue, q, logging_processor))
-            ask_alive_thread = threading.Thread(target=ask_alive, args=(ws2, q, logging_processor))
-            get_token_thread = threading.Thread(target=get_token, args=(q, logging_processor))
+                                               args=(ws1, self.command_process_queue, self.error_queue, logging_processor))
+            ask_alive_thread = threading.Thread(target=ask_alive, args=(ws2, self.error_queue, logging_processor))
+            get_token_thread = threading.Thread(target=get_token, args=(self.error_queue, logging_processor))
 
             send_thread.setDaemon(True)  # 子线程会跟着退出
             received_thread.setDaemon(True)
@@ -73,24 +73,7 @@ class NetWorkProcess(Process):
             get_token_thread.start()
 
             while True:
-                if q.empty():
-                    pass
-                else:
-                    print("要给break了")
-                    raise q.get()  # 抛出子线程的异常
-                    break
-                if not send_thread.is_alive():
-                    print("发送子线程结束")
-                    return
-                if not received_thread.is_alive():
-                    print("接收子线程结束")
-                    return
-                if not ask_alive_thread.is_alive():
-                    print("状态发送子线程结束")
-                    return
-                if not get_token_thread.is_alive():
-                    print("获取token子线程结束")
-                    return
+                time.sleep(1)
 
         except Exception as e:
             self.error_queue.put(
@@ -99,7 +82,7 @@ class NetWorkProcess(Process):
         finally:
             ws1.close()
             ws2.close()
-            token_processor.close()
+            auth_processor.close()
             print("network_connect结束")
 
 

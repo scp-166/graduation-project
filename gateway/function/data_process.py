@@ -4,7 +4,7 @@ import binascii
 from multiprocessing import Process
 
 from utils import custom_exception
-from utils.cache_process import cookie_cache_processor, terminal_cache_processor
+from utils.cache_process import cookie_cache_processor, terminal_cache_processor, warning_value_cache_processor
 from utils.logging_processor import LoggingProcessor
 
 
@@ -46,11 +46,11 @@ class DataProcess(Process):
                         category = re_temporary_saved[0]
                         id = re_temporary_saved[1]
 
-                        # 将终端的信息缓存
+                        # 将终端的信息缓存 terminal_name+category_id+terminal_id
                         key = terminal_categories[int(category)] + category + id  # 目标键值对
-                        terminal_cache_processor.set_terminal_status(key, 1, time=1)
+                        terminal_cache_processor.set_terminal_status(key, 1, time=1)  # 终端存活1s
                         # 存储进缓存
-                        terminal_cache_processor.add_terminal(key)  # 存储终端名
+                        terminal_cache_processor.add_terminal(key)  # 存储曾经存在过的终端名
 
                         category = int(category)
                         id = int(id)
@@ -58,6 +58,12 @@ class DataProcess(Process):
                             binascii.unhexlify(re_temporary_saved[2]))  # unhexlify('07'->'\x07') ord('\x07'->7)
                         decimal = ord(binascii.unhexlify(re_temporary_saved[3]))
                         data = integer + decimal / 100  # 将整数和小数整合起来
+
+                        # 如果超过预警值，加一次
+                        if data >= float(warning_value_cache_processor.get_terminal_warning_value(key)):
+                            warning_value_cache_processor.add_terminal_warning_times_once(key)
+
+
                         status = int(re_temporary_saved[4])
                         # 对数据进格式化
                         info = info_pattern % (category, id, data, status, verification)  # json格式的str

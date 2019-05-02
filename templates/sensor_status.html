@@ -1,13 +1,15 @@
 {% extends 'show_base.html' %}
 {% block sensor_name %}
     {% if category_id == 2 %}
-        温度传感器
+        温度传感器总览
     {% else %}
-        湿度传感器
+        湿度传感器总览
     {% endif %}
 {% endblock %}
 
-{% block head_content %}{% endblock %}
+{% block head_content %}
+    <link rel="stylesheet" href="{% static 'sweetalert/sweetalert.css' %}">
+{% endblock %}
 
 {% block div_content %}
     {% if all_temp_sensor_info %}
@@ -18,12 +20,25 @@
     {% endif %}
     <ul class="list-unstyled menu">
         {% for item in all_temp_sensor_info %}
-            <li>
-                <input type="button" value="{{ item.terminal_name }}"
-                       class="btn btn-info" style="width: 80%;">
-                <ul class="list-unstyled" style="display: none"
-                    data-category-id="{{ item.terminal_category.category_id }}"
-                    data-terminal-id="{{ item.terminal_id }}">  <!-- 不显示 -->
+            <li data-category-id="{{ item.terminal_category.category_id }}"
+                data-terminal-id="{{ item.terminal_id }}">
+                <button class="btn btn-sm set-warning-value">
+                    预警值:
+                    {% if item.warningvalue.value == 0 %}
+                        未设置
+                    {% else %}
+                        {{ item.warningvalue.value }}
+                    {% endif %}
+
+                </button>
+                <input type="button"
+                       value="{{ item.terminal_category.category_name }}-{{ item.terminal_id }}"
+                       class="btn btn-info" style="width: 70%;">
+                <span id="status-{{ item.terminal_category.category_id }}-{{ item.terminal_id }}"
+                      class="label label-danger">未连接</span>
+
+
+                <ul class="list-unstyled" style="display: none">
                     <li class="btn btn-default _auto">动态获取</li>
                     <li class="btn btn-default _month">按月分布</li>
                     <li class="btn btn-default _week">最近一周</li>
@@ -44,8 +59,9 @@
 
 {% block script_content %}
     <script src="{% static 'common.js' %}"></script>
+    <script src="{% static 'sweetalert/sweetalert.min.js' %}"></script>
+    <script src="{% static 'thealert.js' %}"></script>
     <script src="{% static 'echarts.js' %}"></script>
-    <script src="{% static 'sshClient.js' %}"></script>
     <script>
         $(function () {
             window.the_echarts_option = {
@@ -77,15 +93,16 @@
             }
         });
     </script>
+
     <script>
         $(function () {
-            $(".menu li input").siblings().slideUp();  // 各个子项全部拉起
+            $(".menu li input").parent().children('ul').slideUp();  // 同级元素的ul拉起隐藏
             $(".menu li input").click(function () {
                 /*
-                当前input标签的下一个同级元素先停止特效，然后进行特效拉下；
+                当前input标签的下下个同级元素(同级ul)先停止特效，然后进行状态改变
                 父级元素(li标签)的其他同级标签(li)的孩子元素为ul标签进行特效拉上
                  */
-                $(this).next().stop().slideToggle().parent().siblings().children('ul').slideUp();
+                $(this).next().next().stop().slideToggle().parent().siblings().children('ul').slideUp();
             });
         })
     </script>
@@ -96,13 +113,13 @@
                 window.finish_ws = 1;  // 关掉ws
 
                 // 获得ul上携带的属性
-                let category_id = $(this).parent().attr('data-category-id');
-                let terminal_id = $(this).parent().attr('data-terminal-id');
+                let category_id = $(this).parent().parent().attr('data-category-id');
+                let terminal_id = $(this).parent().parent().attr('data-terminal-id');
 
                 let target_div = category_id + '-' + terminal_id;  // echarts容器div
 
                 csrf_ajax.get({
-                    url: '/show/data/month',
+                    url: '/data/month',
                     data: {
                         'category_id': category_id,
                         'terminal_id': terminal_id,
@@ -115,10 +132,10 @@
                         let myChart = echarts.init(document.getElementById(target_div));
 
                         myChart.setOption(window.the_echarts_option);  // 设置初始样式
-                        myChart.showLoading();  // 显示echarts loading
+
 
                         if (ret['code'] === 200) {
-                            myChart.hideLoading();  // 关闭echarts loading
+
 
                             if (is_data_get(ret)) {
                                 alert('no data');
@@ -155,13 +172,13 @@
             $("._week").click(function () {
                 window.finish_ws = 1;  // 关掉ws
 
-                let category_id = $(this).parent().attr('data-category-id');
-                let terminal_id = $(this).parent().attr('data-terminal-id');
+                let category_id = $(this).parent().parent().attr('data-category-id');
+                let terminal_id = $(this).parent().parent().attr('data-terminal-id');
 
                 let target_div = category_id + '-' + terminal_id;
 
                 csrf_ajax.get({
-                    url: '/show/data/cur_week',
+                    url: '/data/cur_week',
                     data: {
                         'category_id': category_id,
                         'terminal_id': terminal_id,
@@ -176,10 +193,9 @@
                         // 给该dom设置属性
                         myChart.setOption(window.the_echarts_option);
 
-                        myChart.showLoading();
 
                         if (ret['code'] === 200) {
-                            myChart.hideLoading();
+
 
                             if (is_data_get(ret)) {  // 全部无数据
                                 alert("no data");
@@ -212,28 +228,107 @@
 
     <script>
         $(function () {
-            var client = new wsClient();   // 创建一个ws对象
-
+            let client = new wsClient();   // 创建一个ws对象
+            window.delete_ws_client = false;  // 内部关闭ws标志
             $("._auto").click(function () {
+                if (window.delete_ws_client === false) {
+                    window.delete_ws_client = true;
+                    let category_id = $(this).parent().parent().attr('data-category-id');
+                    let terminal_id = $(this).parent().parent().attr('data-terminal-id');
+
+                    let target_div = category_id + '-' + terminal_id;
+
+                    focus_echarts_div(target_div); // 显示echarts数据和移动到该位置
+                    // 基于准备好的dom，初始化echarts实例
+                    let myChart = echarts.init(document.getElementById(target_div));
+                    // 给该dom设置属性
+                    let option = {
+                        title: {
+                            text: '动态分布'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            boundaryGap: true,
+                            data: []
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [{
+                            data: [],
+                            type: 'line',
+                            areaStyle: {},
+                            itemStyle: {
+                                normal: {
+                                    label: {
+                                        show: true, //开启显示
+                                        position: 'top', //在上方显示
+                                        textStyle: { //数值样式
+                                            color: 'black',
+                                            fontSize: 10
+                                        }
+                                    }
+                                }
+                            },
+                        }]
+                    };
+                    myChart.setOption(option);
+
+                    let options = {};
+                    options.category_id = category_id;
+                    options.terminal_id = terminal_id;
+                    options.file_path = '/exchange/auto_get_data/';
+
+                    // 开始执行ws通信
+                    start_communicate(options, myChart);
+
+                    var timer = setInterval(function () {
+                        if (window.finish_ws === 1) {
+                            console.log("切换其他功能，关闭连接");
+                            window.finish_ws = 0;
+                            window.delete_ws_client = false;
+                            clearInterval(timer);
+                        }
+                        // 开头改为true，如果变化说明是又一次点了本按钮
+                        else if (window.delete_ws_client === false) {
+                            clearInterval(timer);
+                        }
+                        // 判断websocket对象的状态
+                        else if (client._ws_obj.readyState === WebSocket.CLOSED) {
+                            console.log("已经断开连接，无法通信");
+                            window.finish_ws = 0;
+                            window.delete_ws_client = false;
+                            clearInterval(timer);
+                        } else {
+                            client.send("auto_get_terminal_data");
+                        }
+                    }, 1000)
+                } else {
+                    alert("清除ws，请重新点击");
+                    window.delete_ws_client = false;
+                }
+
                 // 执行ws通信
                 function start_communicate(options, echart_dom_obj) {
-                    console.log("准备连接");
                     client.connect( // 执行ws对象的connect方法
                         $.extend(   // 扩展参数
                             options,  // 目标参数
                             {
                                 onError: function (error) {
                                     console.log("错误: " + error);
+                                    client._ws_obj.close();
+
                                 },
                                 onConnect: function () {
-                                    console.log("尝试连接");
+                                    console.log("连接成功");
                                 },
                                 onClose: function () {
-                                    console.log("断开连接")
+                                    console.log("断开连接");
+                                    client._ws_obj.close();
                                 },
                                 onData: function (data) {
                                     // wsClient对象收到数据后，会回调onData函数
-                                    myChart.hideLoading();
+
                                     echart_dom_obj.setOption({
                                         xAxis: {
                                             data: data.times,
@@ -242,62 +337,164 @@
                                             data: data.data,
                                         }]
                                     })
+
                                 }
                             }
                         )
                     );
                 }
 
-                let category_id = $(this).parent().attr('data-category-id');
-                let terminal_id = $(this).parent().attr('data-terminal-id');
 
-                let target_div = category_id + '-' + terminal_id;
-
-                focus_echarts_div(target_div); // 显示echarts数据和移动到该位置
-                // 基于准备好的dom，初始化echarts实例
-                let myChart = echarts.init(document.getElementById(target_div));
-                // 给该dom设置属性
-                let option = {
-                    xAxis: {
-                        type: 'category',
-                        boundaryGap: false,
-                        data: []
-                    },
-                    yAxis: {
-                        type: 'value'
-                    },
-                    series: [{
-                        data: [],
-                        type: 'line',
-                        areaStyle: {}
-                    }]
-                };
-                myChart.setOption(option);
-
-                let options = {};
-                options.category_id = category_id;
-                options.terminal_id = terminal_id;
-
-                // 开始执行ws通信
-                start_communicate(options, myChart);
-
-                var timer = setInterval(function () {
-                    console.log("定时请求新的数据");
-                    if (window.finish_ws === 1){
-                        console.log("切换其他功能，关闭连接");
-                        window.finish_ws = 0;
-                        clearInterval(timer);
-                    }
-                    // 判断websocket对象的状态
-                    else if (client._ws_obj.readyState === WebSocket.CLOSED) {
-                        console.log("已经断开连接，无法通信");
-                        window.finish_ws = 0;
-                        clearInterval(timer);
-                    } else {
-                        client.send("发了一段数据");
-                    }
-                }, 1000)
             });
         })
+    </script>
+
+    <script>
+        $(function () {
+
+
+            var span_list = [];  // 存储所有的span标签jq对象
+            var i = $('.menu li span');  // 获取所有menu下的li标签(各个传感器对象组)
+            let category_id_list = [];  // 存储所有传感器对象的category_id
+            let terminal_id_list = [];  // 存储所有传感器对象的terminal_id
+
+            for (let k = 0; k < i.length; k++) { // 遍历存储span标签jq对象
+                span_list.push($("#" + i[k].id));
+            }
+            for (let k = 0; k < span_list.length; k++) {  // 遍历存储各个传感器组的category_id和terminal_id
+                category_id_list.push(span_list[k].parent().attr('data-category-id'));
+                terminal_id_list.push(span_list[k].parent().attr('data-terminal-id'));
+            }
+            let info = {
+                "category_id_list": category_id_list,
+                "terminal_id_list": terminal_id_list
+            };
+
+
+            var client = new wsClient();   // 创建一个ws对象
+
+
+            // 执行ws通信
+            function start_communicate(options) {
+                client.connect( // 执行ws对象的connect方法
+                    $.extend(   // 扩展参数
+                        options,  // 目标参数
+                        {
+                            onError: function (error) {
+                                console.log("错误: " + error);
+                            },
+                            onConnect: function () {
+                                console.log("尝试连接");
+                            },
+                            onClose: function () {
+                                console.log("断开连接")
+                            },
+                            onData: function (data) {
+                                // wsClient对象收到数据后，会回调onData函数
+
+                                // 后端发来的存活的category_id和terminal_id, 内容存储的是number类型
+                                let category_id_list = data.data.category_id_list;
+                                let terminal_id_list = data.data.terminal_id_list;
+
+                                if (category_id_list.length === 0 || terminal_id_list.length === 0) {
+                                    for (let i = 0; i < span_list.length; i++) {
+                                        span_list[i].addClass('label-danger').removeClass('label-success');
+                                        span_list[i].text("未连接");
+                                    }
+                                } else {
+                                    for (let i = 0; i < span_list.length; i++) {  // 遍历所有数组中所有span
+                                        for (let k = 0; k < category_id_list.length; k++) {
+                                            if (parseInt(span_list[i].parent().attr('data-category-id')) === category_id_list[k] &&
+                                                parseInt(span_list[i].parent().attr('data-terminal-id')) === terminal_id_list[k]) {
+                                                span_list[i].addClass('label-success').removeClass('label-danger');
+                                                span_list[i].text("已连接");
+                                                {#console.log(category_id_list[k]);#}
+                                                {#console.log(terminal_id_list[k]);#}
+                                            } else {
+                                                span_list[i].addClass('label-danger').removeClass('label-success');
+                                                span_list[i].text("未连接");
+                                            }
+                                        }
+
+                                    }
+                                }
+
+
+                            }
+                        }
+                    )
+                );
+            }
+
+            let options = {};
+
+            options.file_path = '/exchange/ask_status/';
+
+            // 开始执行ws通信
+            start_communicate(options);
+
+            var timer = setInterval(function () {
+                {#console.log("定时请求新的数据");#}
+                if (window.finish_ws === 1) {
+                    {#console.log("切换其他功能，关闭连接");#}
+                    window.finish_ws = 0;
+                    clearInterval(timer);
+                }
+                // 判断websocket对象的状态
+                else if (client._ws_obj.readyState === WebSocket.CLOSED) {
+                    {#console.log("已经断开连接，无法通信");#}
+                    window.finish_ws = 0;
+                    clearInterval(timer);
+                } else {
+                    client.send(info);
+                }
+            }, 1000)
+        })
+    </script>
+    <script>
+    $(function () {
+        $(".set-warning-value").click(function () {
+            let that = $(this);
+            let category_id = $(this).parent().attr('data-category-id');
+            let terminal_id = $(this).parent().attr('data-terminal-id');
+            console.log(category_id);
+            console.log(terminal_id);
+            thealert.alertOneInput({
+                title: "修改预警值",
+                placeholder: "请输入需要的预警值",
+                confirmCallback: function (input_value) {
+                    csrf_ajax.post({
+                        url: '/exchange/warning_value/',
+                        data:{
+                            'value': input_value,
+                            'category_id': category_id,  // 记住标签拿下来都是str
+                            'terminal_id': terminal_id,
+                        },
+                        success: function (ret) {
+                            if(ret['code'] === 200){
+                                console.log("修改成功");
+                                that.text("预警值: " + input_value);
+                                thealert.close();
+                            } else if (ret['code'] === 404) {
+                                thealert.alertErrorToast("查询不到分类");
+                                thealert.close();
+                            } else {
+                                thealert.alertErrorToast("查询不到终端");
+                                thealert.close();
+                            }
+                        },
+                        fail: function (error) {
+                            thealert.alertError("内部错误");
+                        }
+
+                    });
+                },
+                cancelCallback: function () {
+                    console.log("no");
+                }
+            });
+            console.log(this);
+        })
+    })
     </script>
 {% endblock %}

@@ -70,7 +70,7 @@ class WsgBridge(baseBridge.BaseBridge):
 
                         TerminalData.objects.create(terminal=terminal,  # 添加终端数据
                                                     data=data['data'])
-                        print("终端信息存储完毕")
+                        print("终端信息假装存储完毕")
                         self._forward_outbound(data=1)  # 发个成功响应
                 else:
                     self._forward_outbound()  # 发个失败响应
@@ -199,24 +199,6 @@ class AliveBridge(baseBridge.BaseBridge):
         :return:
         """
         try:
-            names = [i for i in cache.iter_keys("*")]  # 暴力拿全部keys，后面可以根据model的名称获得, 注意iter_keys返回一个生成器
-            print("AliveBridge查询所有终端键", end=' ')
-            for i in names:
-                print(i, end=' ')
-                print(type(i), end='#')
-            print()
-
-            with open('./conf/category.conf') as f:
-                terminals = eval(f.read())
-            print(terminals)
-
-            for i in names:
-                if i == 'PI':
-                    print("PI在线")
-                for name in terminals.values():
-                    if i.startswith(name):
-                        print(i, "在线")
-
             data = json.dumps({'received': 0})  # dict->str
             self._websocket.send(data)
         finally:
@@ -367,3 +349,5 @@ class AutoDataBridge(baseBridge.BaseBridge):
         :return:
         """
         self._bridge()  # 将激活的终端的通道设置无延时不堵塞，gevent中添加任务
+
+

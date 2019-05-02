@@ -1,3 +1,5 @@
+{% load static %}
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -14,68 +16,15 @@
 <div class="container">
 
     <div class="row" style="background: #ededed">
-        <nav class="navbar navbar-default">
-            <div class="container-fluid">
-                <!-- 移动设备友好展示 -->
-                <div class="navbar-header">
-                    <!-- data-target是要隐藏的导航栏 -->
-                    <button type="button" class="navbar-toggle collapsed"
-                            data-toggle="collapse"
-                            data-target="#target-navbar-collapse"
-                            aria-expanded="false">
-                        <span class="sr-only">切换任务</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#">功能选择</a>
-                </div>
-
-                <div class="collapse navbar-collapse"
-                     id="target-navbar-collapse">
-                    <ul class="nav navbar-nav">
-                        <li class="active"><a href="{% url 'exhibition:index' %}">首页 <span
-                                class="sr-only">(current)</span></a></li>
-                    </ul>
-
-                    <ul class="nav navbar-nav navbar-right">
-                        <li><a href="#">LED</a></li>
-
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle"
-                               data-toggle="dropdown" role="button"
-                               aria-haspopup="true" aria-expanded="false">温度
-                                <span class="caret"></span></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="{% url 'exhibition:sensor_status' category_id=2%}">温度传感器总览</a></li>
-                                <li role="separator" class="divider"></li>
-                                <li><a href="#">温度总览</a></li>
-                            </ul>
-                        </li>
-
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle"
-                               data-toggle="dropdown" role="button"
-                               aria-haspopup="true" aria-expanded="false">湿度
-                                <span class="caret"></span></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="{% url 'exhibition:sensor_status' category_id=3 %}">湿度传感器总览</a></li>
-                                <li role="separator" class="divider"></li>
-                                <li><a href="#">湿度总览</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div><!-- /.navbar-collapse -->
-            </div><!-- /.container-fluid -->
-        </nav>
+        {% include 'common/navbar_top.html' %}
         <div class="jumbotron">
             <h1>{% block sensor_name %}{% endblock %}</h1>
-            <p>...</p>
+            <p>点击以下按钮，可以查看各个传感器的状态</p>
             <p><a class="btn btn-danger btn-lg" href="#"
                   role="button" id="status">无法连接网关</a></p>
         </div>
 
-        <div class="col-md-6 col-md-offset-3">
+        <div class="col-md-8 col-md-offset-2">
             {% block div_content %}
             {% endblock %}
         </div>
@@ -85,34 +34,68 @@
 <script src="{% static 'csrf_ajax.js' %}"></script>
 <script src="{% static 'bootstrap3/js/bootstrap.min.js' %}"></script>
 {% block script_content %}{% endblock %}
+<script src="{% static 'wsClient.js' %}"></script>
 <script>
     $(function () {
+        var client = new wsClient();   // 创建一个ws对象
         var gate_way_status = $("#status");
 
-        setInterval(function () {
-            console.log("定时器");
-            $.ajax({
-                    'url': '/info/is_alive/',
-                    'dataType': 'json',
-                    'success': function (ret) {
-                        var status = ret['status'];
-                        if (status) {
-                            gate_way_status.addClass("btn-success").removeClass("btn-danger");
-                            gate_way_status.text('成功连接网关')
+        // 执行ws通信
+        function start_communicate(options) {
+            client.connect( // 执行ws对象的connect方法
+                $.extend(   // 扩展参数
+                    options,  // 目标参数
+                    {
+                        onError: function (error) {
+                            console.log("错误: " + error);
+                        },
+                        onConnect: function () {
+                            console.log("连接成功");
+                        },
+                        onClose: function () {
+                            console.log("断开连接")
+                        },
+                        onData: function (data) {
+                            // wsClient对象收到数据后，会回调onData函数
+                            var status = data.data;
+                            if (status) {
+                                gate_way_status.addClass("btn-success").removeClass("btn-danger");
+                                gate_way_status.text('成功连接网关')
 
-                        } else {
-                            gate_way_status.addClass("btn-danger").removeClass("btn-success");
-                            gate_way_status.text('无法连接网关')
+                            } else {
+                                gate_way_status.addClass("btn-danger").removeClass("btn-success");
+                                gate_way_status.text('无法连接网关')
+                            }
+
                         }
-
                     }
-                }
-            )
-        }, 1000);
+                )
+            );
+        }
 
+        let options = {};
+        options.file_path = '/exchange/ask_status/pi/';
 
-    });
+        // 开始执行ws通信
+        start_communicate(options);
 
+        var timer = setInterval(function () {
+            // 如果被外部点击，中断连接
+            if (window.finish_ws === 1) {
+                window.finish_ws = 0;
+                clearInterval(timer);
+            }
+            // 判断websocket对象的状态，如果被服务器关闭，终端连接
+            else if (client._ws_obj.readyState === WebSocket.CLOSED) {
+                window.finish_ws = 0;
+                clearInterval(timer);
+            } else {
+                client.send("get_pi_status");
+            }
+        }, 1000)
+
+    })
 </script>
+
 </body>
 </html>

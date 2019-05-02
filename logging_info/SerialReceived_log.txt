@@ -1,7 +1,1 @@
-2019-05-02 01:28:29,961 - SerialReceived - DEBUG - serial_process中的ret为: b'\x02\x01\x1a\x01\x01\xff\xff\x9c\n'
-2019-05-02 01:28:29,962 - SerialReceived - DEBUG - serial_process中的ret为: b'\x03\x01G\x01\x01\xff\xff\x9c\n'
-2019-05-02 01:28:30,963 - SerialReceived - DEBUG - serial_process中的ret为: b'\x02\x01\x1a\x01\x01\xff\xff\x9c\n'
-2019-05-02 01:28:30,963 - SerialReceived - DEBUG - serial_process中的ret为: b'\x03\x01G\x01\x01\xff\xff\x9c\n'
-2019-05-02 01:28:31,964 - SerialReceived - DEBUG - serial_process中的ret为: b'\x03\x01G\x01\x01\xff\xff\x9c\n'
-2019-05-02 01:28:31,964 - SerialReceived - DEBUG - serial_process中的ret为: b'\x02\x01\x1a\x01\x01\xff\xff\x9c\n'
-2019-05-02 01:28:35,003 - SerialReceived - WARNING - 串口处理结束
+2019-05-03 02:41:01,238 - SerialReceived - WARNING - 串口处理结束

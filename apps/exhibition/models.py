@@ -37,3 +37,14 @@ class TerminalData(models.Model):
     class Meta:
         verbose_name = verbose_name_plural = "终端数据"
 
+
+class WarningValue(models.Model):
+    value = models.SmallIntegerField(default=0, verbose_name="预警值")
+    terminal = models.OneToOneField(TerminalInfo, on_delete=models.CASCADE, verbose_name="终端名称")
+
+    def __str__(self):
+        return "<{}>的预警值为<{}>".format(self.terminal, self.value)
+
+    class Meta:
+        verbose_name = verbose_name_plural = "终端预警值"
+

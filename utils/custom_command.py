@@ -13,6 +13,7 @@ def write_command(command_category, category, id, command, verification):
     :return:
     """
     print("write_command: ", my_command_queue)
+    print("my_command_format ",my_command_format.my_format)
     my_command_queue.put(my_command_format.my_format % (command_category, category, id, command, verification))
 
 

@@ -57,7 +57,7 @@
         $(".led-status").click(function () {
             var div = $(this);
             csrf_ajax.get({
-                'url': '/info/change_led/' + div.attr('data-id') + '/' +div.attr('data-status'),
+                'url': '/exchange/change_led/' + div.attr('data-id') + '/' +div.attr('data-status'),
                 'data':{
                     {#'status': div.attr('data-status')#}
                 },
@@ -84,32 +84,6 @@
         })
     })
 </script>
-<script>
-    $(function () {
-        var gate_way_status = $("#status");
-        setInterval(function () {
-            console.log("定时器");
-            $.ajax({
-                    'url': '/info/is_alive/',
-                    'dataType': 'json',
-                    'success': function (ret) {
-                        var status = ret['status'];
-                        if (status) {
-                            gate_way_status.addClass("btn-success").removeClass("btn-danger");
-                            gate_way_status.text('成功连接网关')
 
-                        } else {
-                            gate_way_status.addClass("btn-danger").removeClass("btn-success");
-                            gate_way_status.text('无法连接网关')
-                        }
-
-                    }
-                }
-            )
-        }, 1000);
-
-    });
-
-</script>
 </body>
 </html>

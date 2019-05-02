@@ -1,14 +1,2 @@
-2019-05-02 01:28:27,781 - ProcessData - DEBUG - process_data中的verf为: 5zmamxmhwsr-yk+x$ie^v@)07i$yx&1(0hqbfwl=yql7=9b2$2
-2019-05-02 01:28:29,970 - ProcessData - DEBUG - process_data中的ret为: b'\x03\x01G\x01\x01\xff\xff\x9c\n'
-2019-05-02 01:28:29,970 - ProcessData - DEBUG - process_data中的to_decimal_data为: 0301470101ffff9c0a
-2019-05-02 01:28:29,972 - ProcessData - DEBUG - 格式化的内容: {"type":3, "id":1, "data":71.01, "status":1, "verf":"5zmamxmhwsr-yk+x$ie^v@)07i$yx&1(0hqbfwl=yql7=9b2$2"}
-2019-05-02 01:28:29,974 - ProcessData - DEBUG - process_data中的verf为: 5zmamxmhwsr-yk+x$ie^v@)07i$yx&1(0hqbfwl=yql7=9b2$2
-2019-05-02 01:28:30,963 - ProcessData - DEBUG - process_data中的ret为: b'\x03\x01G\x01\x01\xff\xff\x9c\n'
-2019-05-02 01:28:30,964 - ProcessData - DEBUG - process_data中的to_decimal_data为: 0301470101ffff9c0a
-2019-05-02 01:28:30,964 - ProcessData - DEBUG - 格式化的内容: {"type":3, "id":1, "data":71.01, "status":1, "verf":"5zmamxmhwsr-yk+x$ie^v@)07i$yx&1(0hqbfwl=yql7=9b2$2"}
-2019-05-02 01:28:30,965 - ProcessData - DEBUG - process_data中的verf为: None
-2019-05-02 01:28:31,965 - ProcessData - DEBUG - process_data中的ret为: b'\x02\x01\x1a\x01\x01\xff\xff\x9c\n'
-2019-05-02 01:28:31,965 - ProcessData - DEBUG - process_data中的to_decimal_data为: 02011a0101ffff9c0a
-2019-05-02 01:28:31,966 - ProcessData - DEBUG - 格式化的内容: {"type":2, "id":1, "data":26.01, "status":1, "verf":"None"}
-2019-05-02 01:28:31,966 - ProcessData - DEBUG - process_data中的verf为: ttaz_eb$=h_-_1!oquk^yu*67sd^%hh(tbm&sro=%t8vao__#8
-2012019-05-02 01:28:34,998 - ProcessData - WARNING - 数据处理结束
+2019-05-03 02:40:58,466 - ProcessData - DEBUG - process_data中的verf为: None
+2019-05-03 02:41:01,237 - ProcessData - WARNING - 数据处理结束

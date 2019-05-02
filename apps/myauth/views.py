@@ -4,6 +4,7 @@ from django.views import View
 from django.contrib.auth import login, logout, authenticate
 from django.core.management import utils
 
+
 from utils.cache_process import cookie_cache_processor
 
 
@@ -14,8 +15,6 @@ class TokenLogin(View):
     def post(self, request):
         telephone = request.POST.get('telephone')
         password = request.POST.get('password')
-        print(telephone)
-        print(password)
         user = authenticate(request, username=telephone, password=password)
         if user:
             if user.is_active:
@@ -52,7 +51,10 @@ def logout_view(request):
     return JsonResponse({"code": 200})
 
 
+# method_decorator装饰器将函数装饰器转换成方法装饰器，这样它就可以用于实例方法。
+# @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')  # name指定修饰的请求类型
 class Token(View):
+    # @method_decorator(login_required)  # 在函数上装饰
     def get(self, request):
         return render(request, 'login.html')
 
@@ -73,16 +75,3 @@ class Token(View):
                 return JsonResponse({"code": 400})
         return JsonResponse({'code': 405})
 
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import redirect, reverse
-
-
-@login_required(login_url='/auth/view2/')
-def my_view(request):
-    print(type(reverse('view2')))
-    print(reverse('view2'))
-    return JsonResponse({'code': 10086})
-
-def my_redirect_field(request):
-    return JsonResponse({'code': 1})

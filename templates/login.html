@@ -1,15 +1,49 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name='viewport' content="width=device-width, initial-scale=1">
     <title>登陆</title>
+    <link rel="stylesheet"
+          href="{% static 'bootstrap3/css/bootstrap.min.css' %}">
 </head>
 <body>
-<form action="" method="post">
-    <input type='hidden' name='csrfmiddlewaretoken' value='{{ csrf_token }}'>
-    <input type="text" name="telephone" placeholder="手机号">
-    <input type="password" name="password" placeholder="密码">
-    <button type="submit">登陆</button>
-</form>
+<div class="container">
+    <div class="row">
+        <div class="col-xs-10 col-md-10 col-xs-offset-1 col-md-offset-1">
+            <div class="jumbotron">
+                <p>请登陆</p>
+                <form method="post">
+                    <input type='hidden' name='csrfmiddlewaretoken' value='{{ csrf_token }}'>
+                    <div class="form-group">
+                        <input type="text" name="telephone" class="form-control"
+                               placeholder="手机号">
+                    </div>
+                    <div class="form-group">
+                        <input type="password" name="password"
+                               class="form-control"
+                               placeholder="密码">
+
+                    </div>
+                    <button type="submit" class="btn btn-default center-block">
+                        登陆
+                    </button>
+                </form>
+            </div>
+
+            {#            <form action="" method="post">#}
+            {#                <input type='hidden' name='csrfmiddlewaretoken'#}
+            {#                       value='{{ csrf_token }}'>#}
+            {#                <input type="text" name="telephone" placeholder="手机号">#}
+            {#                <input type="password" name="password" placeholder="密码">#}
+            {#                <button type="submit">登陆</button>#}
+            {#            </form>#}
+
+        </div>
+    </div>
+</div>
+<script src="{% static 'jquery-3.1.1.min.js' %}"></script>
+<script src="{% static 'bootstrap3/js/bootstrap.min.js' %}"></script>
 </body>
 </html>

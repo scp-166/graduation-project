@@ -41,7 +41,6 @@ class AuthProcessor:
         else:
             # 获取csrf_token
             self._csrf_token = self._get_csrf_token()
-            print(self._csrf_token)
             self._get_token()
 
     def _get_csrf_token(self):
@@ -50,12 +49,9 @@ class AuthProcessor:
         :return:
         """
         ret = self._session.get(self.login_url, headers=self._appropriate_headers)  # 获得页面 bytes
-        print(ret.content.decode())
         reg = r"<input type='hidden' name='csrfmiddlewaretoken' value='(.*)'>"  # 为了拿到 csrftoken
         pattern = re.compile(reg)
-        print(pattern)
         result = pattern.findall(ret.content.decode())  # 从注册页中正则匹配，获取 csrftoken
-        print(result)
         if result:
             csrf_token = result[0]  # 拿到匹配项的第一个，其实只有一个
             return csrf_token
@@ -93,7 +89,6 @@ class AuthProcessor:
             if json.loads(ret.text)['code'] == 200:  # 登陆成功
                 # 保存cookies
                 cookies = requests.utils.dict_from_cookiejar(self._session.cookies)  # dict-like
-                print(cookies)
                 cookie_cache_processor.set_verification(cookies['token'][1:-1])  # 保存进缓存, 注意token是存在引号，需要去除
                 # 保存进文件
                 with open("session_id.txt", "w+") as fp:
